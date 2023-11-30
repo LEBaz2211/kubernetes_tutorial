@@ -1,0 +1,17 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name:
+  annotations:
+    kubernetes.io/ingress.class: "kong"
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api/message
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 80

@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Website</title>
+</head>
+<body>
+  <h1>Simple Frontend</h1>
+  <button id="loadMessage">Load Message</button>
+  <p id="message"></p>
+
+  <script>
+    document.getElementById('loadMessage').addEventListener('click', function() {
+      fetch('/api/message').then(response => response.json()).then(data => {
+        document.getElementById('message').innerText = data.message;
+      }).catch(err => console.error(err));
+    });
+  </script>
+</body>
+</html>
