@@ -4,13 +4,13 @@ metadata:
   name: backend-ingress
 spec:
   ingressClassName: kong
-    rules:
-      - http:
-          paths:
-            - path: /api/message
-              pathType: Prefix
-              backend:
-                service:
-                  name: backend-service
-                  port:
-                    number: 80
+  rules:
+    - http:
+        paths:
+          - path: /api/message
+            pathType: Prefix
+            backend:
+              service:
+                name: backend-service
+                port:
+                  number: 80
