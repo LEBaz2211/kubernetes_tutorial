@@ -131,9 +131,107 @@ If you encounter a permissions error like `permission denied` when accessing `k3
 
 After resolving the permissions issue, retry accessing the cluster using `k3s kubectl get node`.
 
-## Final Steps: Deploying and Testing Your Website
+## Step 4: Containerizing and Deploying Your Website
 
-### Step 4: Deploy Frontend and Backend on k3s
+Before deploying your website to k3s, it's essential to containerize both the frontend and backend components and prepare your Kubernetes deployment and service configuration.
+
+### Docker Steps for Containerization
+
+1. **Writing Dockerfiles**
+
+   - **Frontend Dockerfile**:
+
+     - This is for a static site (HTML/CSS/JavaScript) using Node.js as a server.
+     - Example Dockerfile:
+       ```Dockerfile
+       FROM node:alpine
+       WORKDIR /usr/src/app
+       COPY package*.json ./
+       RUN npm install
+       COPY . .
+       EXPOSE 80
+       CMD ["node", "server.js"]
+       ```
+     - `server.js` is your Node.js server file serving the static files.
+
+   - **Backend Dockerfile**:
+     - For a Node.js/Express API.
+     - Example Dockerfile:
+       ```Dockerfile
+       FROM node:14
+       WORKDIR /usr/src/app
+       COPY package*.json ./
+       RUN npm install
+       COPY . .
+       EXPOSE 3000
+       CMD ["node", "app.js"]
+       ```
+     - Replace `app.js` with your main server file.
+
+2. **Building and Pushing Docker Images**
+
+   - Navigate to the respective directories and build the images:
+     ```bash
+     docker build -t yourusername/frontend:v1 .
+     docker build -t yourusername/backend:v1 .
+     ```
+   - Push the images to a Docker registry:
+     ```bash
+     docker login
+     docker push yourusername/frontend:v1
+     docker push yourusername/backend:v1
+     ```
+
+### Preparing Kubernetes YAML Files
+
+1. **Deployment YAML**
+
+   - Frontend and backend deployment YAML files define how your applications are deployed in the Kubernetes cluster.
+   - Example for Frontend:
+     ```yaml
+     apiVersion: apps/v1
+     kind: Deployment
+     metadata:
+       name: frontend-deployment
+     spec:
+       replicas: 2
+       selector:
+         matchLabels:
+           app: frontend
+       template:
+         metadata:
+           labels:
+             app: frontend
+         spec:
+           containers:
+             - name: frontend
+               image: yourusername/frontend:v1
+               ports:
+                 - containerPort: 80
+     ```
+   - Similarly, create a deployment YAML for the backend.
+
+2. **Service YAML**
+
+   - Service YAML files define how your applications are exposed within the Kubernetes cluster.
+   - Example for Frontend:
+     ```yaml
+     apiVersion: v1
+     kind: Service
+     metadata:
+       name: frontend-service
+     spec:
+       type: ClusterIP
+       selector:
+         app: frontend
+       ports:
+         - protocol: TCP
+           port: 80
+           targetPort: 80
+     ```
+   - Similarly, create a service YAML for the backend.
+
+## Step 5: Deploy Frontend and Backend on k3s
 
 1. **Deploy Your Frontend**:
 
@@ -167,7 +265,7 @@ After resolving the permissions issue, retry accessing the cluster using `k3s ku
      kubectl get services
      ```
 
-### Step 5: Integrate with Kong API Gateway
+## Step 6: Integrate with Kong API Gateway
 
 1. **Configure Kong for Frontend and Backend**:
 
@@ -184,7 +282,7 @@ After resolving the permissions issue, retry accessing the cluster using `k3s ku
      kubectl get ingress
      ```
 
-### Step 6: Integrating with Kong API Gateway
+## Step 7: Integrating with Kong API Gateway
 
 1. **Configure Routing for Frontend and Backend**:
 
@@ -201,7 +299,7 @@ After resolving the permissions issue, retry accessing the cluster using `k3s ku
      kubectl get ingress
      ```
 
-### Step 7: Testing and Verification
+## Step 8: Testing and Verification
 
 1. **Access the Website**:
 
@@ -224,7 +322,7 @@ After resolving the permissions issue, retry accessing the cluster using `k3s ku
      kubectl logs [pod-name]
      ```
 
-### Step 8: Maintenance and Updates
+## Step 9: Maintenance and Updates
 
 1. **Updating Services**:
 
@@ -239,7 +337,7 @@ After resolving the permissions issue, retry accessing the cluster using `k3s ku
    - Regularly backup your Kubernetes configuration and data.
    - Have a recovery plan in place in case of service interruption or data loss.
 
-### Conclusion
+## Conclusion
 
 With the completion of these steps, your website is now successfully deployed on a Kubernetes cluster using k3s and Kong API Gateway. This setup provides a robust, scalable platform for your web applications, leveraging the efficiencies of Kubernetes and the power of Kong for API management.
 
