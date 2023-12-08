@@ -8,7 +8,7 @@ This tutorial guides you through deploying a website with both frontend and back
 
 - A server or a local machine for k3s installation.
 - SSH access to the server.
-- Basic familiarity with Kubernetes concepts.
+- Basic familiarity with Kubernetes concepts. (You should realy watch this [video](https://www.youtube.com/watch?v=wXuSqFJVNQA) if you are not familiar with Kubernetes)
 
 ## Step 1: Install k3s on Your Server
 
@@ -132,6 +132,8 @@ If you encounter a permissions error like `permission denied` when accessing `k3
 After resolving the permissions issue, retry accessing the cluster using `k3s kubectl get node`.
 
 ## Step 4: Containerizing and Deploying Your Website
+
+If you only want to test the deployment and you will be using the provided k3s_manifests to deploy the mock_website, you can skip this step because the deployment files are already configured to use the images that are pushed to my dockerhub. Keep in mind that if you want to use your own images, you will need to follow the steps below to containerize and push your images to dockerhub. You will also need to update the deployment files to use your images.
 
 Before deploying your website to k3s, it's essential to containerize both the frontend and backend components and prepare your Kubernetes deployment and service configuration.
 
