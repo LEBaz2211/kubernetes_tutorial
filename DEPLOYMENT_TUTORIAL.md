@@ -274,32 +274,32 @@ Before deploying your website to k8s, it's essential to containerize both the fr
 
    - Deploy the frontend application to your k8s cluster:
      ```bash
-     kubectl -n ingress-nginxapply -f frontend-deployment.yaml
+     kubectl -n ingress-nginx apply -f frontend-deployment.yaml
      ```
    - Deploy the frontend service to expose the application:
      ```bash
-     kubectl -n ingress-nginxapply -f frontend-service.yaml
+     kubectl -n ingress-nginx apply -f frontend-service.yaml
      ```
 
 2. **Deploy Your Backend**:
 
    - Deploy the backend application similarly:
      ```bash
-     kubectl -n ingress-nginxapply -f backend-deployment.yaml
+     kubectl -n ingress-nginx apply -f backend-deployment.yaml
      ```
    - Expose the backend service:
      ```bash
-     kubectl -n ingress-nginxapply -f backend-service.yaml
+     kubectl -n ingress-nginx apply -f backend-service.yaml
      ```
 
 3. **Verify Deployments and Services**:
    - Confirm that both frontend and backend deployments are running:
      ```bash
-     kubectl -n ingress-nginxget deployments
+     kubectl -n ingress-nginx get deployments
      ```
    - Ensure the services are correctly set up and accessible:
      ```bash
-     kubectl -n ingress-nginxget services
+     kubectl -n ingress-nginx get services
      ```
 
 ## Step 6: Integrate with NGINX API Gateway
@@ -309,8 +309,8 @@ Before deploying your website to k8s, it's essential to containerize both the fr
    - Define Ingress resources to route traffic through NGINX for both frontend and backend. This ensures efficient management of requests and responses.
    - Apply the Ingress configurations:
      ```bash
-     kubectl -n ingress-nginxapply -f frontend-ingress.yaml
-     kubectl -n ingress-nginxapply -f backend-ingress.yaml
+     kubectl -n ingress-nginx apply -f frontend-ingress.yaml
+     kubectl -n ingress-nginx apply -f backend-ingress.yaml
      ```
 
 2. **Verify NGINX Integration**:
@@ -326,14 +326,14 @@ Before deploying your website to k8s, it's essential to containerize both the fr
    - Set up Ingress resources in your k8s cluster to route traffic through NGINX to your frontend and backend services.
    - Apply your Ingress configuration:
      ```bash
-     kubectl -n ingress-nginxapply -f frontend-ingress.yaml
-     kubectl -n ingress-nginxapply -f backend-ingress.yaml
+     kubectl -n ingress-nginx apply -f frontend-ingress.yaml
+     kubectl -n ingress-nginx apply -f backend-ingress.yaml
      ```
 
 2. **Validate the Ingress Configuration**:
    - Ensure that the Ingress resources are correctly configured and active:
      ```bash
-     kubectl -n ingress-nginxget ingress
+     kubectl -n ingress-nginx get ingress
      ```
 
 ## Step 8: Testing and Verification
@@ -351,12 +351,12 @@ Before deploying your website to k8s, it's essential to containerize both the fr
 3. **Monitor Services and Logs**:
    - Regularly monitor the status of your deployments and services:
      ```bash
-     kubectl -n ingress-nginxget deployments
-     kubectl -n ingress-nginxget services
+     kubectl -n ingress-nginx get deployments
+     kubectl -n ingress-nginx get services
      ```
    - Check logs for any errors or issues:
      ```bash
-     kubectl -n ingress-nginxlogs [pod-name]
+     kubectl -n ingress-nginx logs [pod-name]
      ```
 
 ## Step 9: Maintenance and Updates
