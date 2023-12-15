@@ -1,45 +1,60 @@
-# Deploying a Website on Kubernetes Using k3s and Kong API Gateway
+# Deploying a Website on Kubernetes NGINX
 
 ## Overview
 
-This tutorial guides you through deploying a website with both frontend and backend components on a Kubernetes cluster. We use k3s, a lightweight Kubernetes distribution, and Kong API Gateway for efficient routing and management.
+This tutorial guides you through deploying a website with both frontend and backend components on a Kubernetes cluster. We use k8s, a lightweight Kubernetes distribution, and NGINX API Gateway for efficient routing and management.
 
 ## Prerequisites
 
-- A server or a local machine for k3s installation.
+- A server or a local machine for k8s installation.
 - SSH access to the server.
 - Basic familiarity with Kubernetes concepts. (You should realy watch this [video](https://www.youtube.com/watch?v=wXuSqFJVNQA) if you are not familiar with Kubernetes)
 
-## Step 1: Install k3s on Your Server
+## Step 1: Install k8s on Your Server
 
 ### Selecting a Server
 
-- Choose a server or use a local machine for k3s installation. This can be a virtual machine in the cloud or any physical machine that meets the system requirements.
+- Choose a server or use a local machine for k8s installation. This can be a virtual machine in the cloud or any physical machine that meets the system requirements.
 
 ### Installation Process
 
 - SSH into your chosen server.
-- Execute the k3s installation script:
+#### Option 1
+- Install the latest version for the Go language, it is needed for the instalation of kind
+- Install kind on your server, the documentation and process can be found [here]( https://kind.sigs.k8s.io/)
 
+  ```bash
+  kind create cluster --name nginx-ingress --image kindest/node:v1.23.5
+  ```
+
+#### Option 2
+- Or you could execute the basic k8s installation script:
+  ```bash
+  curl -sfL https://get.k8s.io | sh -
+  ```
+
+  This command downloads and executes the script to install k8s and start the server.
+
+#### Option 3
+- In case of lack of server resources you can try using a k3s installation scrip:
   ```bash
   curl -sfL https://get.k3s.io | sh -
   ```
 
-  This command downloads and executes the script to install k3s and start the server.
-
-## Step 2: Configure k3s Cluster
+## Step 2: Configure k8s Cluster
 
 ### Verify Cluster Setup
 
-- Confirm that k3s is operational:
+- Confirm that k8s is operational:
 
   ```bash
-  k3s kubectl get node
+  k8s kubectl get node
   ```
 
   This command lists the nodes in your cluster, indicating a successful setup.
+  At this stage you should see the control-plane,master node, if not, see the TROUBLESHOOTING_CHEATSHEET
 
-### Set Up kubectl
+### Set Up kubectl (only if the kubernetes install is k3s)
 
 - Install `kubectl` on your local machine to manage your Kubernetes cluster.
 - Securely transfer the kubeconfig file from your server to your local machine:
@@ -50,7 +65,7 @@ This tutorial guides you through deploying a website with both frontend and back
 
 - Adjust the `k3s.yaml` file by replacing the server's IP address with the correct one.
 
-### Verify Kubeconfig File
+### Verify Kubeconfig File (only if the kubernetes install is k3s)
 
 - Ensure that your server's `KUBECONFIG` environment variable correctly references the kubeconfig file:
 
@@ -68,11 +83,11 @@ This tutorial guides you through deploying a website with both frontend and back
 
     This step ensures that your Kubernetes tools on the server, like `kubectl`, have the correct configuration to communicate with your k3s cluster.
 
-## Step 3: Set Up Kong API Gateway
+## Step 3: Set Up NGINX API Gateway
 
-### Preparing for Kong Installation
+### Preparing for NGINX Installation
 
-Before installing Kong, ensure Helm, a package manager for Kubernetes, is installed:
+Before installing NGINX, ensure Helm, a package manager for Kubernetes, is installed:
 
 - Check if Helm is installed:
 
@@ -88,54 +103,74 @@ Before installing Kong, ensure Helm, a package manager for Kubernetes, is instal
 
   This script fetches and runs the latest version of Helm 3 installation script.
 
-### Installation of Kong
+### NGINX Ingress Controller
+Before satrting the install, prease read the [documentation here](https://kubernetes.github.io/ingress-nginx/)
 
-Now that Helm is set up, proceed to install Kong in your k3s cluster:
+First thing we do is check the compatibility matrix to ensure we are deploying a compatible version of NGINX Ingress on our Kubernetes cluster </br>
 
-- Add the Kong repository to Helm:
+The Documentation also has a link to the [GitHub Repo](https://github.com/kubernetes/ingress-nginx/) which has a compatibility matrix </br>
 
-  ```bash
-  helm repo add kong https://charts.konghq.com
-  helm repo update
-  ```
+From the compatibility matrix, find the latest version of NGINX that mathes with that your kubernetes install.
 
-- Install Kong with the following command:
+From our container we can do this:
 
-  ```bash
-  helm install kong/kong --generate-name --set ingressController.installCRDs=false
-  ```
+```
+helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+helm search repo ingress-nginx --versions
+```
 
-This process deploys Kong API Gateway in your Kubernetes cluster, enabling efficient management and routing for your website's backend and frontend services.
+This will install and dispaly all the vertions of nginx on helm. 
 
-## Troubleshooting Permissions Issue
+Store the chosen app vertion and chart vertion as environment variables.
+```
+CHART_VERSION="4.4.0"
+APP_VERSION="1.5.1"
+```
 
-If you encounter a permissions error like `permission denied` when accessing `k3s.yaml`, follow these steps:
+Now we will create a manifest file to let helm install the chosen version ngnix on our server. 
 
-1. **Adjust File Permissions**:
+```
+mkdir ./kubernetes/ingress/controller/nginx/manifests/
 
-   - On your server, change the permissions of the kubeconfig file to make it globally readable:
+helm template ingress-nginx ingress-nginx \
+--repo https://kubernetes.github.io/ingress-nginx \
+--version ${CHART_VERSION} \
+--namespace ingress-nginx \
+> ./kubernetes/ingress/controller/nginx/manifests/nginx-ingress.${APP_VERSION}.yaml
+```
 
-     ```bash
-     sudo chmod 644 /etc/rancher/k3s/k3s.yaml
-     ```
+### Deploy the NGINX Ingress controller 
 
-2. **Alternative Method**:
+create a namespace 
+```
+kubectl create namespace ingress-nginx
+```
+appy the yaml configuration file
+```
+kubectl apply -f ./kubernetes/ingress/controller/nginx/manifests/nginx-ingress.${APP_VERSION}.yaml
+```
 
-   - If you prefer more restricted access, copy the file to your user's directory and set user-specific permissions:
+### Check the installation
 
-     ```bash
-     sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config
-     sudo chown $(whoami) ~/.kube/config
-     sudo chmod 600 ~/.kube/config
-     ```
+```
+kubectl -n ingress-nginx get pods
+```
+The traffic for our cluster will come in over the Ingress service </br>
+Note that we dont have load balancer capability in `kind` by default, so our `LoadBalancer` is pending:
 
-After resolving the permissions issue, retry accessing the cluster using `k3s kubectl get node`.
+To expose our ingress manager to the ouside we will port forward it to port 443 (hhtps)
+
+```
+kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 443
+```
+
+We can reach our controller on the server ip now, as we don't have a services yet, we should se a 404 page 
 
 ## Step 4: Containerizing and Deploying Your Website
 
-If you only want to test the deployment and you will be using the provided k3s_manifests to deploy the mock_website, you can skip this step because the deployment files are already configured to use the images that are pushed to my dockerhub. Keep in mind that if you want to use your own images, you will need to follow the steps below to containerize and push your images to dockerhub. You will also need to update the deployment files to use your images.
+If you only want to test the deployment and you will be using the provided k8s_manifests to deploy the mock_website, you can skip this step because the deployment files are already configured to use the images that are pushed to my dockerhub. Keep in mind that if you want to use your own images, you will need to follow the steps below to containerize and push your images to dockerhub. You will also need to update the deployment files to use your images.
 
-Before deploying your website to k3s, it's essential to containerize both the frontend and backend components and prepare your Kubernetes deployment and service configuration.
+Before deploying your website to k8s, it's essential to containerize both the frontend and backend components and prepare your Kubernetes deployment and service configuration.
 
 ### Docker Steps for Containerization
 
@@ -233,11 +268,11 @@ Before deploying your website to k3s, it's essential to containerize both the fr
      ```
    - Similarly, create a service YAML for the backend.
 
-## Step 5: Deploy Frontend and Backend on k3s
+## Step 5: Deploy Frontend and Backend on k8s
 
 1. **Deploy Your Frontend**:
 
-   - Deploy the frontend application to your k3s cluster:
+   - Deploy the frontend application to your k8s cluster:
      ```bash
      kubectl apply -f frontend-deployment.yaml
      ```
@@ -267,28 +302,28 @@ Before deploying your website to k3s, it's essential to containerize both the fr
      kubectl get services
      ```
 
-## Step 6: Integrate with Kong API Gateway
+## Step 6: Integrate with NGINX API Gateway
 
-1. **Configure Kong for Frontend and Backend**:
+1. **Configure NGINX for Frontend and Backend**:
 
-   - Define Ingress resources to route traffic through Kong for both frontend and backend. This ensures efficient management of requests and responses.
+   - Define Ingress resources to route traffic through NGINX for both frontend and backend. This ensures efficient management of requests and responses.
    - Apply the Ingress configurations:
      ```bash
      kubectl apply -f frontend-ingress.yaml
      kubectl apply -f backend-ingress.yaml
      ```
 
-2. **Verify Kong Integration**:
-   - Ensure that the Ingress resources are correctly configured and Kong is routing traffic properly:
+2. **Verify NGINX Integration**:
+   - Ensure that the Ingress resources are correctly configured and NGINX is routing traffic properly:
      ```bash
      kubectl get ingress
      ```
 
-## Step 7: Integrating with Kong API Gateway
+## Step 7: Integrating with NGINX API Gateway
 
 1. **Configure Routing for Frontend and Backend**:
 
-   - Set up Ingress resources in your k3s cluster to route traffic through Kong to your frontend and backend services.
+   - Set up Ingress resources in your k8s cluster to route traffic through NGINX to your frontend and backend services.
    - Apply your Ingress configuration:
      ```bash
      kubectl apply -f frontend-ingress.yaml
@@ -311,7 +346,7 @@ Before deploying your website to k3s, it's essential to containerize both the fr
 2. **Functional Testing**:
 
    - Perform functional testing to ensure all parts of your website are interacting correctly.
-   - Test API endpoints to verify they are accessible through Kong API Gateway.
+   - Test API endpoints to verify they are accessible through NGINX API Gateway.
 
 3. **Monitor Services and Logs**:
    - Regularly monitor the status of your deployments and services:
@@ -341,7 +376,7 @@ Before deploying your website to k3s, it's essential to containerize both the fr
 
 ## Conclusion
 
-With the completion of these steps, your website is now successfully deployed on a Kubernetes cluster using k3s and Kong API Gateway. This setup provides a robust, scalable platform for your web applications, leveraging the efficiencies of Kubernetes and the power of Kong for API management.
+With the completion of these steps, your website is now successfully deployed on a Kubernetes cluster using k8s and NGINX API Gateway. This setup provides a robust, scalable platform for your web applications, leveraging the efficiencies of Kubernetes and the power of NGINX for API management.
 
 Keep monitoring your deployments for performance and scalability. Regular updates and backups are essential for maintaining the health and security of your application.
 
