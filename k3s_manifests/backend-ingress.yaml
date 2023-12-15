@@ -3,7 +3,7 @@ kind: Ingress
 metadata:
   name: backend-ingress
 spec:
-  ingressClassName: kong
+  ingressClassName: nginx
   rules:
     - http:
         paths:
