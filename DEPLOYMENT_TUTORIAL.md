@@ -2,7 +2,7 @@
 
 ## Overview
 
-This tutorial guides you through deploying a website with both frontend and backend components on a Kubernetes cluster. We use k8s, a lightweight Kubernetes distribution, and NGINX API Gateway for efficient routing and management.
+This tutorial guides you through deploying a website with both frontend and backend components on a Kubernetes cluster. We use k8s, and NGINX as an Ingress Controller to manage traffic to and from the website.
 
 ## Prerequisites
 
@@ -14,21 +14,25 @@ This tutorial guides you through deploying a website with both frontend and back
 
 ### Selecting a Server
 
-- Choose a server or use a local machine for k8s installation. This can be a virtual machine in the cloud or any physical machine that meets the system requirements.
+- Choose a server or use a local machine for k8s installation. This can be a virtual machine in the cloud or any physical machine that meets the system requirements. (Keep in mind that this tutorial is for a linux machine, and that all the commands assume that you are inside a linux terminal (for a server you will be using ssh))
 
 ### Installation Process
 
 - SSH into your chosen server.
+
 #### Option 1
+
 - Install the latest version for the Go language, it is needed for the instalation of kind
-- Install kind on your server, the documentation and process can be found [here]( https://kind.sigs.k8s.io/)
+- Install kind on your server, the documentation and process can be found [here](https://kind.sigs.k8s.io/)
 
   ```bash
   kind create cluster --name nginx-ingress --image kindest/node:v1.23.5
   ```
 
 #### Option 2
+
 - Or you could execute the basic k8s installation script:
+
   ```bash
   curl -sfL https://get.k8s.io | sh -
   ```
@@ -36,6 +40,7 @@ This tutorial guides you through deploying a website with both frontend and back
   This command downloads and executes the script to install k8s and start the server.
 
 #### Option 3
+
 - In case of lack of server resources you can try using a k3s installation scrip:
   ```bash
   curl -sfL https://get.k3s.io | sh -
@@ -52,7 +57,7 @@ This tutorial guides you through deploying a website with both frontend and back
   ```
 
   This command lists the nodes in your cluster, indicating a successful setup.
-  At this stage you should see the control-plane,master node, if not, see the TROUBLESHOOTING_CHEATSHEET
+  At this stage you should see the control-plane,master node, if not, see the KUBERNETES_TROUBLESHOOT_CHEATSHEET
 
 ### Set Up kubectl (only if the kubernetes install is k3s)
 
@@ -83,7 +88,7 @@ This tutorial guides you through deploying a website with both frontend and back
 
     This step ensures that your Kubernetes tools on the server, like `kubectl`, have the correct configuration to communicate with your k3s cluster.
 
-## Step 3: Set Up NGINX API Gateway
+## Step 3: Set Up NGINX Ingress Controller
 
 ### Preparing for NGINX Installation
 
@@ -104,6 +109,7 @@ Before installing NGINX, ensure Helm, a package manager for Kubernetes, is insta
   This script fetches and runs the latest version of Helm 3 installation script.
 
 ### NGINX Ingress Controller
+
 Before satrting the install, prease read the [documentation here](https://kubernetes.github.io/ingress-nginx/)
 
 First thing we do is check the compatibility matrix to ensure we are deploying a compatible version of NGINX Ingress on our Kubernetes cluster </br>
@@ -119,15 +125,16 @@ helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
 helm search repo ingress-nginx --versions
 ```
 
-This will install and dispaly all the vertions of nginx on helm. 
+This will install and dispaly all the vertions of nginx on helm.
 
 Store the chosen app vertion and chart vertion as environment variables.
+
 ```
 CHART_VERSION="4.4.0"
 APP_VERSION="1.5.1"
 ```
 
-Now we will create a manifest file to let helm install the chosen version ngnix on our server. 
+Now we will create a manifest file to let helm install the chosen version ngnix on our server.
 
 ```
 mkdir ./kubernetes/ingress/controller/nginx/manifests/
@@ -139,13 +146,16 @@ helm template ingress-nginx ingress-nginx \
 > ./kubernetes/ingress/controller/nginx/manifests/nginx-ingress.${APP_VERSION}.yaml
 ```
 
-### Deploy the NGINX Ingress controller 
+### Deploy the NGINX Ingress controller
 
-create a namespace 
+create a namespace
+
 ```
 kubectl create namespace ingress-nginx
 ```
+
 appy the yaml configuration file
+
 ```
 kubectl apply -f ./kubernetes/ingress/controller/nginx/manifests/nginx-ingress.${APP_VERSION}.yaml
 ```
@@ -155,6 +165,7 @@ kubectl apply -f ./kubernetes/ingress/controller/nginx/manifests/nginx-ingress.$
 ```
 kubectl -n ingress-nginx get pods
 ```
+
 The traffic for our cluster will come in over the Ingress service </br>
 Note that we dont have load balancer capability in `kind` by default, so our `LoadBalancer` is pending:
 
@@ -164,11 +175,11 @@ To expose our ingress manager to the ouside we will port forward it to port 443 
 kubectl -n ingress-nginx port-forward svc/ingress-nginx-controller 443
 ```
 
-We can reach our controller on the server ip now, as we don't have a services yet, we should se a 404 page 
+We can reach our controller on the server ip now, as we don't have a services yet, we should se a 404 page
 
 ## Step 4: Containerizing and Deploying Your Website
 
-If you only want to test the deployment and you will be using the provided k8s_manifests to deploy the mock_website, you can skip this step because the deployment files are already configured to use the images that are pushed to my dockerhub. Keep in mind that if you want to use your own images, you will need to follow the steps below to containerize and push your images to dockerhub. You will also need to update the deployment files to use your images.
+If you only want to test the deployment and you will be using the provided kubernetes_manifests to deploy the mock_website, you can skip this step because the deployment files are already configured to use the images that are pushed to my dockerhub. Keep in mind that if you want to use your own images, you will need to follow the steps below to containerize and push your images to dockerhub. You will also need to update the deployment files to use your images.
 
 Before deploying your website to k8s, it's essential to containerize both the frontend and backend components and prepare your Kubernetes deployment and service configuration.
 
